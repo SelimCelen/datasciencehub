@@ -1,5 +1,10 @@
 
 
+---
+
+### 📄 `README.md`
+
+````markdown
 # 🔬 Scientific Data Processing Server
 
 This is a plugin-driven scientific data processing backend built in **Go** using:
@@ -161,6 +166,7 @@ MIT License – see [`LICENSE`](LICENSE) file for details.
 
 Would you like me to:
 
+- Generate a `swagger.yaml` file and include it in the repo?
 - Create a minimal Dockerfile and `.dockerignore`?
 - Add a `Makefile` or `run.sh` for simplified setup?
 
