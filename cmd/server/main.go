@@ -9,7 +9,7 @@ import (
 	"syscall"
 	"time"
 
-	"datasciencehub/internal/app"
+	"github.com/SelimCelen/datasciencehub/internal/app"
 )
 
 func main() {
