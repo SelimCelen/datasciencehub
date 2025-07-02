@@ -10,6 +10,7 @@ import (
 	"github.com/gin-gonic/gin"
 	"go.mongodb.org/mongo-driver/bson"
 	"go.mongodb.org/mongo-driver/bson/primitive"
+	"gopkg.in/yaml.v3"
 )
 
 func (app *AppContext) uploadData(c *gin.Context) {
