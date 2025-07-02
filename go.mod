@@ -1,4 +1,4 @@
-module github.com/SelimCelen/datasciencehub
+module datasciencehub
 
 go 1.24.4
 
