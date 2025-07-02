@@ -9,7 +9,7 @@
 
 This is a plugin-driven scientific data processing backend built in **Go** using:
 
-- 🧠 [Otto](https://github.com/robertkrimen/otto): JavaScript VM for executing user-defined logic
+- 🧠 [Goja](https://github.com/dop251/goja): JavaScript VM for executing user-defined logic
 - 🚀 [Gin](https://github.com/gin-gonic/gin): High-performance web framework
 - 🗃️ [MongoDB](https://www.mongodb.com/): Persistent storage for data jobs and plugins
 - 📜 YAML-based task definition
@@ -166,7 +166,6 @@ MIT License – see [`LICENSE`](LICENSE) file for details.
 
 Would you like me to:
 
-- Generate a `swagger.yaml` file and include it in the repo?
 - Create a minimal Dockerfile and `.dockerignore`?
 - Add a `Makefile` or `run.sh` for simplified setup?
 
