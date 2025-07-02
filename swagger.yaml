@@ -1,0 +1,197 @@
+openapi: 3.0.3
+info:
+  title: Scientific Data Processing API
+  description: Plugin-driven data processing server with Otto JavaScript engine.
+  version: 1.0.0
+
+servers:
+  - url: http://localhost:8080/api/v1
+    description: Local Development Server
+
+paths:
+  /data/upload:
+    post:
+      summary: Upload data for processing
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              example:
+                temperature: [23, 25, 24]
+      responses:
+        '201':
+          description: Data uploaded
+        '400':
+          description: Invalid input
+
+  /data/process:
+    post:
+      summary: Process uploaded data using specified plugins
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              properties:
+                job_id:
+                  type: string
+                plugins:
+                  type: array
+                  items:
+                    type: object
+                    properties:
+                      name:
+                        type: string
+                      params:
+                        type: object
+              example:
+                job_id: 64a78e7d0e12123ab4567890
+                plugins:
+                  - name: normalize
+                    params:
+                      factor: 10
+      responses:
+        '200':
+          description: Data processed
+        '400':
+          description: Invalid job or plugins
+
+  /data/process/yaml:
+    post:
+      summary: Upload and process a YAML-defined task
+      requestBody:
+        required: true
+        content:
+          multipart/form-data:
+            schema:
+              type: object
+              properties:
+                yaml_file:
+                  type: string
+                  format: binary
+      responses:
+        '200':
+          description: Task processed
+
+  /data/jobs:
+    get:
+      summary: List all data processing jobs
+      responses:
+        '200':
+          description: A list of jobs
+
+  /data/jobs/{id}:
+    get:
+      summary: Get details of a specific job
+      parameters:
+        - name: id
+          in: path
+          required: true
+          schema:
+            type: string
+      responses:
+        '200':
+          description: Job details
+        '400':
+          description: Invalid ID
+        '404':
+          description: Job not found
+
+  /plugins:
+    post:
+      summary: Upload a new JavaScript plugin
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              required: [name, javascript]
+              properties:
+                name:
+                  type: string
+                description:
+                  type: string
+                javascript:
+                  type: string
+              example:
+                name: normalize
+                description: Normalize input values
+                javascript: |
+                  var result = input.map(x => x / params.factor);
+                  result;
+      responses:
+        '201':
+          description: Plugin uploaded
+        '400':
+          description: Compilation error
+
+    get:
+      summary: List all plugins
+      responses:
+        '200':
+          description: Plugin list
+
+  /plugins/{name}:
+    get:
+      summary: Get plugin by name
+      parameters:
+        - name: name
+          in: path
+          required: true
+          schema:
+            type: string
+      responses:
+        '200':
+          description: Plugin details
+        '404':
+          description: Plugin not found
+
+    delete:
+      summary: Delete plugin by name
+      parameters:
+        - name: name
+          in: path
+          required: true
+          schema:
+            type: string
+      responses:
+        '200':
+          description: Plugin deleted
+        '404':
+          description: Plugin not found
+
+  /plugins/{name}/execute:
+    post:
+      summary: Execute a plugin with input and parameters
+      parameters:
+        - name: name
+          in: path
+          required: true
+          schema:
+            type: string
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              properties:
+                input:
+                  type: object
+                params:
+                  type: object
+              example:
+                input: [1, 2, 3]
+                params:
+                  factor: 10
+      responses:
+        '200':
+          description: Plugin executed
+        '400':
+          description: Plugin execution error
+        '404':
+          description: Plugin not found
