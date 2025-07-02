@@ -3,8 +3,10 @@ package app
 import (
 	"sync"
 
+	"github.com/dop251/goja"
+
 	"github.com/gin-gonic/gin"
-	"github.com/robertkrimen/otto"
+
 	"go.mongodb.org/mongo-driver/mongo"
 )
 
@@ -12,14 +14,14 @@ type AppContext struct {
 	Config      ServerConfig
 	MongoClient *mongo.Client
 	Router      *gin.Engine
-	Plugins     map[string]*otto.Script
-	VMFactory   func() *otto.Otto
+	Plugins     map[string]*goja.Program
+	VMFactory   func() *goja.Runtime
 	PluginsMux  sync.RWMutex
 }
 
 func NewAppContext() *AppContext {
 	return &AppContext{
-		Plugins: make(map[string]*otto.Script),
+		Plugins: make(map[string]*goja.Program),
 	}
 }
 
@@ -33,8 +35,8 @@ func (app *AppContext) Initialize() {
 }
 
 func (app *AppContext) initVMFactory() {
-	app.VMFactory = func() *otto.Otto {
-		vm := otto.New()
+	app.VMFactory = func() *goja.Runtime {
+		vm := goja.New()
 		vm.Set("import", nil)
 		vm.Set("load", nil)
 		vm.Set("require", nil)

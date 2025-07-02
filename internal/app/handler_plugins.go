@@ -5,6 +5,7 @@ import (
 	"strings"
 	"time"
 
+	"github.com/dop251/goja"
 	"github.com/gin-gonic/gin"
 	"go.mongodb.org/mongo-driver/bson"
 	"go.mongodb.org/mongo-driver/mongo/options"
@@ -36,11 +37,15 @@ func (app *AppContext) uploadPlugin(c *gin.Context) {
 	collection := app.MongoClient.Database(app.Config.DatabaseName).Collection("plugins")
 
 	// Compile script to check validity
-	vm := app.VMFactory()
-	_, err := vm.Compile("", plugin.JavaScript)
+	_, err := goja.Compile("", plugin.JavaScript, false)
 	if err != nil {
-		c.JSON(400, gin.H{"error": "invalid JavaScript: " + err.Error()})
+		// handle error
+		c.JSON(400, gin.H{"error": "invalid JavaScript: " + err.Error() + plugin.JavaScript})
 		return
+	}
+
+	if err != nil {
+
 	}
 
 	// Upsert plugin
@@ -61,12 +66,12 @@ func (app *AppContext) uploadPlugin(c *gin.Context) {
 
 	app.PluginsMux.Lock()
 	defer app.PluginsMux.Unlock()
-
-	// Compile and cache plugin
-	script, err := vm.Compile("", plugin.JavaScript)
+	program, err := goja.Compile("", plugin.JavaScript, false)
 	if err == nil {
-		app.Plugins[plugin.Name] = script
+		// handle error
+		app.Plugins[plugin.Name] = program
 	}
+	// Compile and cache plugin
 
 	c.JSON(201, gin.H{"message": "plugin uploaded/updated successfully"})
 }

@@ -5,6 +5,7 @@ import (
 	"log"
 	"time"
 
+	"github.com/dop251/goja"
 	"go.mongodb.org/mongo-driver/bson"
 )
 
@@ -27,8 +28,7 @@ func (app *AppContext) loadPlugins() {
 			continue
 		}
 
-		vm := app.VMFactory()
-		script, err := vm.Compile("", plugin.JavaScript)
+		script, err := goja.Compile("", plugin.JavaScript, false)
 		if err != nil {
 			log.Printf("Error compiling plugin %s: %v", plugin.Name, err)
 			continue
