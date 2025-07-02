@@ -1,10 +1,5 @@
 
 
----
-
-### 📄 `README.md`
-
-````markdown
 # 🔬 Scientific Data Processing Server
 
 This is a plugin-driven scientific data processing backend built in **Go** using:
