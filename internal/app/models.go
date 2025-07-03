@@ -11,8 +11,6 @@ type Plugin struct {
 	Name        string             `bson:"name"`
 	Description string             `bson:"description"`
 	JavaScript  string             `bson:"javascript"`
-	CreatedAt   time.Time          `bson:"created_at"`
-	UpdatedAt   time.Time          `bson:"updated_at"`
 }
 
 type DataJob struct {

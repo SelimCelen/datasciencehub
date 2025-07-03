@@ -47,13 +47,14 @@ def upload_and_process_yaml_task(yaml_content):
 
 def main():
     # Step 1: Upload sample data
-    sample_data = {"values": [100, 200, 300, 400, 500]}
+    sample_data = [100, 200, 300, 400, 500]
+
     job_id = upload_data(sample_data)
 
     # Step 2: Upload pluginslt;"
-    normalize_js = "var result = input.values.map(x => x / params.factor); result;"
+    normalize_js = "var result = input.map(function(x) {return x / params.factor;}); result;"
 
-    threshold_js = "var limit = params.limit || 0; var result = input.map(x => x > limit ? 1 : 0); result;"
+    threshold_js = "var limit = params.limit || 0; var result = input.map(function(x){return x > limit ? 1 : 0;}); result;"
 
 
     upload_plugin("normalize", "Normalize array by factor", normalize_js)

@@ -27,8 +27,6 @@ func (app *AppContext) uploadPlugin(c *gin.Context) {
 		Name:        strings.TrimSpace(input.Name),
 		Description: input.Description,
 		JavaScript:  input.JavaScript,
-		CreatedAt:   time.Now(),
-		UpdatedAt:   time.Now(),
 	}
 
 	ctx, cancel := context.WithTimeout(c.Request.Context(), 10*time.Second)
@@ -52,9 +50,6 @@ func (app *AppContext) uploadPlugin(c *gin.Context) {
 	filter := bson.M{"name": plugin.Name}
 	update := bson.M{
 		"$set": plugin,
-		"$setOnInsert": bson.M{
-			"created_at": plugin.CreatedAt,
-		},
 	}
 
 	opts := options.Update().SetUpsert(true)
