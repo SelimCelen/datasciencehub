@@ -126,7 +126,7 @@ Preview it at [https://editor.swagger.io](https://editor.swagger.io).
 * Modules:
 
   * `github.com/gin-gonic/gin`
-  * `github.com/robertkrimen/otto`
+  * `https://github.com/dop251/goja`
   * `go.mongodb.org/mongo-driver`
   * `gopkg.in/yaml.v3`
 
