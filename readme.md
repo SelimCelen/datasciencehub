@@ -7,7 +7,6 @@ This is a plugin-driven scientific data processing backend built in **Go** using
 - 🚀 [Gin](https://github.com/gin-gonic/gin): High-performance web framework
 - 🗃️ [MongoDB](https://www.mongodb.com/): Persistent storage for data jobs and plugins
 - 📜 YAML-based task definition
-- 🔁 Built-in MapReduce support
 
 ---
 
