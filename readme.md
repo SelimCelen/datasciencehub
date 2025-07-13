@@ -16,7 +16,6 @@ This is a plugin-driven scientific data processing backend built in **Go** using
 - Store and manage JavaScript plugins in MongoDB
 - Define complex workflows using YAML task files
 - Run plugins sequentially or in parallel
-- MapReduce support using JavaScript mappers/reducers
 - RESTful API with full Swagger (OpenAPI 3.0) spec
 
 ---
