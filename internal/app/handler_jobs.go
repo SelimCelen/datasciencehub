@@ -155,7 +155,7 @@ func (app *AppContext) processYamlTask(c *gin.Context) {
 
 	sem := make(chan struct{}, app.Config.MaxParallel)
 
-	processStep := func(stepNum int, step map[string]interface{}, data interface{}) (interface{}, error) {
+	processStep := func(_ int, step map[string]interface{}, data interface{}) (interface{}, error) {
 		pluginName, ok := step["plugin"].(string)
 		if !ok {
 			return nil, fmt.Errorf("plugin name not specified in step")

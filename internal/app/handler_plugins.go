@@ -1,13 +1,19 @@
 package app
 
 import (
+	"bytes"
 	"context"
+	"errors"
+	"io"
+	"net/http"
+
 	"strings"
 	"time"
 
 	"github.com/dop251/goja"
 	"github.com/gin-gonic/gin"
 	"go.mongodb.org/mongo-driver/bson"
+	"go.mongodb.org/mongo-driver/mongo/gridfs"
 	"go.mongodb.org/mongo-driver/mongo/options"
 )
 
@@ -19,58 +25,76 @@ func (app *AppContext) uploadPlugin(c *gin.Context) {
 	}
 
 	if err := c.ShouldBindJSON(&input); err != nil {
-		c.JSON(400, gin.H{"error": err.Error()})
+		c.JSON(http.StatusBadRequest, gin.H{"error": err.Error()})
 		return
 	}
 
+	// Validate JavaScript before storing
+	if _, err := goja.Compile("", input.JavaScript, false); err != nil {
+		c.JSON(http.StatusBadRequest, gin.H{
+			"error": "invalid JavaScript: " + err.Error(),
+		})
+		return
+	}
+
+	ctx, cancel := context.WithTimeout(c.Request.Context(), 60*time.Second)
+	defer cancel()
+
+	// Create GridFS bucket
+	bucket, err := gridfs.NewBucket(app.MongoClient.Database(app.Config.DatabaseName))
+	if err != nil {
+		c.JSON(http.StatusInternalServerError, gin.H{"error": "failed to create GridFS bucket"})
+		return
+	}
+
+	// Delete existing file if it exists (GridFS allows multiple files with same name)
+	if err := bucket.Delete(strings.TrimSpace(input.Name)); err != nil && !errors.Is(err, gridfs.ErrFileNotFound) {
+		c.JSON(http.StatusInternalServerError, gin.H{"error": "failed to clean existing plugin"})
+		return
+	}
+
+	// Upload to GridFS
+	uploadStream, err := bucket.OpenUploadStream(strings.TrimSpace(input.Name))
+	if err != nil {
+		c.JSON(http.StatusInternalServerError, gin.H{"error": "failed to create upload stream"})
+		return
+	}
+	defer uploadStream.Close()
+
+	if _, err := uploadStream.Write([]byte(input.JavaScript)); err != nil {
+		c.JSON(http.StatusInternalServerError, gin.H{"error": "failed to write plugin content"})
+		return
+	}
+
+	// Store metadata in plugins collection
 	plugin := Plugin{
 		Name:        strings.TrimSpace(input.Name),
 		Description: input.Description,
-		JavaScript:  input.JavaScript,
 	}
 
-	ctx, cancel := context.WithTimeout(c.Request.Context(), 10*time.Second)
-	defer cancel()
-
 	collection := app.MongoClient.Database(app.Config.DatabaseName).Collection("plugins")
+	filter := bson.M{"name": plugin.Name}
+	update := bson.M{"$set": plugin}
+	opts := options.Update().SetUpsert(true)
 
-	// Compile script to check validity
-	_, err := goja.Compile("", plugin.JavaScript, false)
-	if err != nil {
-		// handle error
-		c.JSON(400, gin.H{"error": "invalid JavaScript: " + err.Error() + plugin.JavaScript})
+	if _, err := collection.UpdateOne(ctx, filter, update, opts); err != nil {
+		c.JSON(http.StatusInternalServerError, gin.H{"error": "failed to update plugin metadata"})
 		return
 	}
 
+	// Cache the compiled script
+	program, err := goja.Compile("", input.JavaScript, false)
 	if err != nil {
-
-	}
-
-	// Upsert plugin
-	filter := bson.M{"name": plugin.Name}
-	update := bson.M{
-		"$set": plugin,
-	}
-
-	opts := options.Update().SetUpsert(true)
-	_, err = collection.UpdateOne(ctx, filter, update, opts)
-	if err != nil {
-		c.JSON(500, gin.H{"error": err.Error()})
+		c.JSON(http.StatusBadRequest, gin.H{"error": "invalid JavaScript after upload: " + err.Error()})
 		return
 	}
 
 	app.PluginsMux.Lock()
-	defer app.PluginsMux.Unlock()
-	program, err := goja.Compile("", plugin.JavaScript, false)
-	if err == nil {
-		// handle error
-		app.Plugins[plugin.Name] = program
-	}
-	// Compile and cache plugin
+	app.Plugins[plugin.Name] = program
+	app.PluginsMux.Unlock()
 
-	c.JSON(201, gin.H{"message": "plugin uploaded/updated successfully"})
+	c.JSON(http.StatusCreated, gin.H{"message": "plugin uploaded/updated successfully"})
 }
-
 func (app *AppContext) listPlugins(c *gin.Context) {
 	ctx, cancel := context.WithTimeout(c.Request.Context(), 10*time.Second)
 	defer cancel()
@@ -95,21 +119,31 @@ func (app *AppContext) listPlugins(c *gin.Context) {
 func (app *AppContext) getPlugin(c *gin.Context) {
 	name := c.Param("name")
 
-	ctx, cancel := context.WithTimeout(c.Request.Context(), 10*time.Second)
-	defer cancel()
-
-	collection := app.MongoClient.Database(app.Config.DatabaseName).Collection("plugins")
-
-	var plugin Plugin
-	err := collection.FindOne(ctx, bson.M{"name": name}).Decode(&plugin)
+	bucket, err := gridfs.NewBucket(app.MongoClient.Database(app.Config.DatabaseName))
 	if err != nil {
-		c.JSON(404, gin.H{"error": "plugin not found"})
+		c.JSON(http.StatusInternalServerError, gin.H{"error": "failed to create GridFS bucket"})
 		return
 	}
 
-	c.JSON(200, plugin)
-}
+	downloadStream, err := bucket.OpenDownloadStreamByName(strings.TrimSpace(name))
+	if err != nil {
+		if err == gridfs.ErrFileNotFound {
+			c.JSON(http.StatusNotFound, gin.H{"error": "plugin not found"})
+			return
+		}
+		c.JSON(http.StatusInternalServerError, gin.H{"error": "failed to open download stream"})
+		return
+	}
+	defer downloadStream.Close()
 
+	fileBuffer := bytes.NewBuffer(nil)
+	if _, err := io.Copy(fileBuffer, downloadStream); err != nil {
+		c.JSON(http.StatusInternalServerError, gin.H{"error": "failed to read plugin content"})
+		return
+	}
+
+	c.JSON(http.StatusOK, gin.H{"content": fileBuffer.String()})
+}
 func (app *AppContext) deletePlugin(c *gin.Context) {
 	name := c.Param("name")
 

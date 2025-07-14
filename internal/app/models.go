@@ -10,7 +10,6 @@ type Plugin struct {
 	ID          primitive.ObjectID `bson:"_id,omitempty"`
 	Name        string             `bson:"name"`
 	Description string             `bson:"description"`
-	JavaScript  string             `bson:"javascript"`
 }
 
 type DataJob struct {
